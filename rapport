@@ -1,0 +1,1203 @@
+\documentclass[french,12pt]{article} 
+\usepackage{natbib}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{endnotes}
+\usepackage{amsmath,systeme}
+\usepackage{tkz-tab}
+\graphicspath{ {./images/} }
+\usepackage{geometry}
+\geometry{hmargin=3cm,vmargin=3cm}
+\usepackage{tikz}
+\usepackage{float}
+\usetikzlibrary{arrows}
+\usepackage{amsfonts}
+\usepackage{minted}
+\usepackage{subfigure}
+\newcommand{\indep}{\perp \!\!\! \perp}
+\addto\captionsfrench{\renewcommand{\contentsname}{Sommaire}}
+
+\usepackage[many]{tcolorbox}    
+\newtcolorbox{preuve}[1]{%
+tikznode boxed title,
+enhanced,
+arc=0mm,
+interior style={white},
+attach boxed title to top center= {yshift=-\tcboxedtitleheight/2},
+fonttitle=\bfseries,
+colbacktitle=white,coltitle=black,
+boxed title style={size=normal,colframe=white,boxrule=0pt},
+title={#1}}
+\usepackage{lipsum}
+
+\newtcolorbox{theoreme}[1]{%
+tikznode boxed title,
+enhanced,
+arc=0mm,
+interior style={white},
+attach boxed title to top center= {yshift=-\tcboxedtitleheight/2},
+fonttitle=\bfseries,
+colbacktitle=white,coltitle=red,
+boxed title style={size=normal,colframe=white,boxrule=0pt},
+title={#1}}
+\usepackage{lipsum}
+
+\begin{document}
+
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\center
+\textsc{\LARGE Institut National des Sciences Appliquées} \\[1cm]
+\includegraphics[scale=0.3]{logo.jpeg}\\[4cm]
+{ \Huge \bfseries Rapport du Projet Modélisation \\[0.15cm] }
+\HRule \\[0.5cm]
+{ \LARGE Le modèle SIS et SIR stochastique}\\[8cm]
+{ \large Hugo Julia et Xiaoya Wang}\\[0.2cm]
+{ \large Groupe B}\\[0.6cm]
+\today \\ [1cm]
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\thispagestyle{empty}
+\newpage
+
+\setcounter{page}{1}
+\section{Introduction}
+
+Les épidémies, causées par des virus ou par des bactéries, sont connues par un accroissement anormal du nombre de cas d’une maladie infectieuse, dans une région donnée ou au sein d’une population. Leur histoire est aussi ancienne que celle de l'humanité, à savoir que la plus ancienne épidémie a eu lieu de 430 à 426 avant JC, qui a tué plus d'un quart de la population grecque. 
+
+Pour mieux connaître et ensuite contrôler une épidémie, on peut mettre en œuvre des modèles mathématiques pour prévoir son évolution. Dans ce projet de modélisation, nous allons modéliser l’évolution d’une épidémie dans une population donnée, nous nous concentrerons sur deux modèles en particulier : SIS et SIR.
+
+Nous allons d'abord commencer par analyser les modèles déterministes, où nous obtenons une trajectoire de l'épidémie avec un jeu de paramètres et conditions initiales fixes. Puis nous verrons différentes manières de modéliser les épidémies en prenant en compte la nature aléatoire de leur propagation.
+
+\section{Modèles déterministes}
+
+ Les modelés déterministes reposent sur des systèmes d’équations différentielles dont la programmation et la résolution sont devenues aisées grâce a l’informatique. Ils permettent de disposer très rapidement de résultats. Ils présentent cependant l'inconvénient de ne pas prendre en compte des évènements aléatoires inéluctables lors des démarrages épidémiques, comme les évènements a très haut potentiel de contagion (super-spread events). Nous traiterons ces cas dans une deuxième partie.
+ 
+\subsection{Modèle SIS sans démographie}
+Les modèles SIS (susceptible-infectious-susceptible) sont souvent utilisés pour décrire les maladies infectieuses, en particulier les infections sexuellement transmissibles, par exemple comme la gonorrhée. Pour ces maladies, les individus ne peuvent pas être immunisés et donc un individu peut être infecté plusieurs fois au cours de sa vie.
+
+Dans cette partie on s'intéresse au modèle SIS sans démographie, les naissances et les décès naturels de la population ont été ignorés et on considère les fonctions suivantes:\\
+
+   	\begin{itemize}
+   		\item [-] S: la proportion des individus susceptibles, un individu susceptible peut devenir malade après contacter les personnes infectées.
+   		\item [-] I : la proportion des individus infectés, un individu infecté peut transmettre l'infection à d'autres individus susceptibles.\\
+   		
+Ces fonctions sont reliées dans les équations différentielles par les paramètres suivants : 
+
+   		\item [-] $\beta$ : taux d'infection, une probabilité individuelle d'être infecté au contact d'une autre personne infectée.
+   		\item [-] $\gamma$ : taux de récupération, on s'intéresse souvent au terme $\frac{1}{\gamma}$ , qui représente la période infectieuse en  moyenne.
+	\end{itemize}
+	
+\setlength{\unitlength}{1cm}
+   		\begin{picture}(5,3)
+   		\put(4,1.5){\framebox(2,0.8)[c]{S}}
+   		\put(6,2.1){\vector(1,0){3}}
+   		\put(9,1.5){\framebox(2,0.8)[c]{I}}
+   		\put(9,1.8){\vector(-1,0){3}}
+   		\put(7.4,2.4){$\beta$}
+   		\put(7.4,1.4){$\gamma$}
+   	\end{picture}
+
+Le modèle SIS se représente sous la forme de deux équations différentielles ordinaires:
+
+\begin{theoreme}{Equations}
+\[ \frac{dS}{dt}=-\beta IS + \gamma I\]
+\[ \frac{dI}{dt}=\beta IS-\gamma I \]
+\end{theoreme}
+
+
+Si on regarde la première équation, on constate que le terme IS signifie qu'un malade rencontre un susceptible, et le contamine avec un taux $\beta$, d'où l'augmentation du nombre de cas contaminés de $\beta IS$, et la diminution du nombre de susceptibles, où on retrouve le même terme avec un  signe négatif. Le deuxième terme $\gamma$I représente les personnes infectées qui guérissent puis reviennent aux susceptibles, ce qui fait croître le nombre des susceptibles et diminuer le nombre d'infectés. \\
+
+Pour que l'épidémie s'arrête, il faut que le nombre d'infectés diminue, donc sa dérivée $\frac{dI}{dt}$ doit être négative. En résolvant $\beta IS - \gamma I < 0$, on obtient une condition limite: $\frac{\beta S(0)}{\gamma}=1$, et on introduit donc le nombre de reproduction de base $R_0 = \frac{\beta}{\gamma}$ (avec la population initiale de susceptibles égale à 1), qui est un élément important pour déterminer si l'épidémie va s'arrêter. Il représente le nombre moyen de personnes qu’une personne contagieuse peut infecter.\\
+
+On voit 2 cas émerger selon la valeur de $R_0$:
+
+   	\begin{itemize}
+   		\item [-]Si $R_0>1$, le nombre de susceptibles diminue tant que le nombre d'infectés continue à augmenter, l'épidémie va continuer à se propager. Plus $R_0$ est grand, moins il faut de temps pour stabiliser la courbe.
+   		\item [-]Si $R_0 \leq 1$, l'épidémie va s'éteindre, le nombre d'infectés I reste à 0 en temps infini.\\
+	\end{itemize}
+	
+Comme on a une équation différentielle avec la condition initiale $I(t=0)$ prédéfinie, cela se transforme en problème de Cauchy, donc la solution du problème peut être approchée par différentes méthodes de résolution numériques connues, notamment celles de Runge-Kutta.\\
+
+Nous l'avons modélisé sur Python, avec les paramètres: $\beta = 1.4247$, $\gamma= 0.14286$ et $R_0 = 9.97$, puis dans un deuxième temps: $\beta=0.78 $, $\gamma=1$ et $R_0 = 0.78$. Voici les graphes que nous avons obtenu:
+
+\begin{figure}[H]
+ \begin{minipage}[c]{.46\linewidth} 
+ \includegraphics[width=\linewidth]{SIS.png}
+  \caption{Résolution numérique des équations,   $R_0 = 9.97 > 1$ }
+ \end{minipage} 
+ \hfill 
+ \begin{minipage}[c]{.46\linewidth} 
+ \includegraphics[width=\linewidth]{SIS2.png}
+  \caption{Résolution numérique des équations,   $R_0 = 0.78 < 1$ }
+ \end{minipage}
+\end{figure}
+
+\textit{Le code correspondant est en annexe rubrique "Code PYTHON 3".}
+
+Nos hypothèses sur l'influence de $R_0$ sont bien confirmées pour la résolution numérique.
+
+\subsection{Le modèle SIR}
+
+Dans ce modèle, on divise la population en 3 catégories : 
+   		
+   	\begin{itemize}
+   		\item [-]Les Susceptibles (S),  qui n'ont jamais été en contact avec la maladie considérée
+   		\item [-]Les Infectés (I),  qui portent la maladie et sont capables de la transmettre
+   		\item [-]Les individus qui ne transmettent plus la maladie (R)
+	\end{itemize}
+	
+Ce modèle est surtout adapté pour modéliser des maladies qui confèrent une immunité définitive ou très longue aux malades qui ont guéris. On va séparer deux cas : le modèle SIR sans démographie et avec démographie.
+	
+\subsubsection{Le modèle SIR sans démographie }
+
+    Pour introduire le modèle,  il est plus simple de considérer une population "fermée",  c'est à dire qui reste constante,  sans considérer les morts naturelles, les naissances, ou les migrations. En terme de réalité physique, on peut imaginer l'introduction d'une maladie dans une population dont les membres n'ont de contact qu'entre eux et de manière à ce que l'épidémie résultante soit assez rapide pour ne pas à avoir à considérer les processus démographiques naturels.  \\
+
+    On peut alors imaginer les scénarios suivants,  qui grâce à l'introduction de paramètres intrinsèques à l'épidémie nous permettent de construire les équations différentielles représentant la dynamique du problème : 
+    
+   \begin{itemize}
+   		\item [-]Un individu infecté (I) contamine un individu susceptible (S) au taux $\beta$,  qui correspond au nombre moyen de contact par personne par unité de temps. Dans d'autres termes, lors d'une rencontre entre un susceptible et un infecté, on a une chance $\beta$ que le susceptible soit contaminé. Cela explique donc le terme $\beta IS$ qui a un signe positif dans l'équation régissant I et un signe négatif dans l'équation régissant S.
+   		\item [-]Un individu infecté (I) guérit ou meurt au taux $\gamma$, l'inverse du temps moyen de guérison. Il rejoint alors la population R (Removed en anglais), d'où le terme $\gamma I$ dans les équations de I et R.
+   		\item [-] La population reste constante : $S+I+R = 1$ à tout instant.\\
+   		
+   		
+	\end{itemize}
+   		
+   	\setlength{\unitlength}{1cm}
+   		\begin{picture}(5,3)
+   		\put(3,1.5){\framebox(2,0.8)[c]{S}}
+   		\put(5,1.9){\vector(1,0){1.5}}
+   		\put(6.5,1.5){\framebox(2,0.8)[c]{I}}
+   		\put(5,1.9){\vector(1,0){1.5}}
+   		\put(10,1.5){\framebox(2,0.8)[c]{R}}
+   		\put(8.5,1.9){\vector(1,0){1.5}}
+   		\put(5.65,2.1){$\beta$}
+   		\put(9.15,2.1){$\gamma$}
+   	\end{picture}
+   
+ On obtient alors les équations suivantes : 
+ \begin{theoreme}{Equations}
+ 	\begin{center}
+ 	\[ \frac{dS}{dt} =  -\beta IS\]
+ 	\[ \frac{dI}{dt} = \beta IS - \gamma I\]
+ 	\[ \frac{dR}{dt} = \gamma I\]
+ 	\end{center}
+ \end{theoreme}
+ 
+ On ne peut pas trouver de solution exacte à ce problème mais on peut l’approcher par des méthodes d’intégration numérique des équations différentielles comme Euler ou Runge Kutta, comme on l'a fait dans l'étude du modèle SIS.  \\
+ 
+ Pour toute maladie, un enjeu sanitaire majeur est de savoir si elle se propage dans la population et à quelle vitesse. L'épidémie se propage si $\frac{dI}{dt} > 0 \Leftrightarrow I (\beta S - \gamma) > 0 \Leftrightarrow \frac{\beta S}{\gamma} > 1$. En supposant que tout le monde est susceptible d'être contaminé au temps initial, ($S(0) = 1$),  on voit alors que l'épidémie se propage si et seulement si au temps 0, $\frac{\beta}{\gamma} > 1 \Leftrightarrow R_0 > 1$.  \\
+ 
+ Ce $R_0 = \beta / \gamma$ que l'on a déjà introduit pour le modèle SIS représente en fait le nombre moyen d'individus contaminés par contact avec un infecté. Il est donc logique que l'épidémie se propage seulement si ce nombre est supérieur à un.\\
+ 
+ Nous avons tracé les dynamiques du modèle pour plusieurs valeurs de $\gamma$ et $\beta$ et donc de $R_0$. Sur le premier graphe on voit les courbes pour $\beta = 1.4247$, $\gamma= 0.14286$,  $R_0 = 9.97,$ des valeurs proches de celles de la varicelle.  Sur le deuxième,  $\beta=0.78 $ et $\gamma=1$, donc $R_0 = 0.78$.\\
+ 
+ \begin{figure} [H]
+ \begin{minipage}[c]{.46\linewidth} 
+ \includegraphics[width=\linewidth]{SIR_wod1}
+  \caption{Résolution numérique des équations,   $R_0 = 9.97 > 1$ }
+ \end{minipage} 
+ \hfill 
+ \begin{minipage}[c]{.46\linewidth} 
+ \includegraphics[width=\linewidth]{SIR_wod2}
+  \caption{Résolution numérique des équations,   $R_0 = 0.78 < 1$ }
+ \end{minipage} 
+  \end{figure}
+  
+ \textit{Le code correspondant est en annexe rubrique "Code PYTHON 1".}
+ 
+ Ici, on voit bien que avec des valeurs de $R_0 < 1$, l'épidémie ne se propage pas, et dans le cas inverse, la dynamique des susceptibles et des infectés est similaire à la modélisation SIS au début, puis lorsque la majorité de la population commence à gagner l'immunité, les infectés baissent fortement et on arrive à un état d'immunité collective.
+ 
+    \subsubsection{Le modèle SIR avec démographie }
+			
+Dans le modèle précédent, on avait supposé que la population considérée était fermée et que la propagation de l'épidémie était assez rapide pour ne pas avoir à considérer les morts et les naissances naturelles. Pour pouvoir appliquer notre modèle à plus de situations réelles, on introduit un nouveau paramètre $\mu$, qui correspond au taux de mortalité naturelle,  l'inverse de la durée de vie moyenne des individus de la population.   Pour garantir que la population totale reste aussi constante, on suppose que $\mu$ est aussi le taux de natalité naturel de la population considérée.\\
+Ainsi, on a des nouveaux individus qui rentrent dans la population saine au taux $\mu$, et des individus qui meurent naturellement peu importe si ils étaient sains (S), infectés (I), ou guéris (R).
+
+			
+\setlength{\unitlength}{1cm}
+\begin{picture}(5,6)
+   		\put(1,5.3){\vector(0,-1){1.5}}
+   		\put(1,3){\vector(0,-1){1.5}}
+   		\put(1,3){\vector(0,-1){1.5}}
+   		\put(0,3){\framebox(2,0.8)[c]{S}}
+   		\put(2,3.4){\vector(1,0){1.5}}
+   		\put(3.5,3){\framebox(2,0.8)[c]{I}}
+   		\put(4.5,3){\vector(0,-1){1.5}}
+   		\put(2,3.4){\vector(1,0){1.5}}
+   		\put(7,3){\framebox(2,0.8)[c]{R}}
+   		\put(8,3){\vector(0,-1){1.5}}
+   		\put(5.5,3.4){\vector(1,0){1.5}}
+   		\put(2.65,3.6){$\beta$}
+   		\put(6.15,3.6){$\gamma$}
+   		\put(1.2,4.5){$\mu$}
+   		\put(4.7,2.25){$\mu$}
+  		\put(1.2,2.25){$\mu$}
+   		\put(8.2,2.25){$\mu$}
+   		
+\end{picture}
+   	
+   	On a donc les nouvelles équations : 
+   	
+   	\begin{theoreme}{Equations}
+   	\[\frac{dS}{dt} =  \mu - \beta IS - \mu S\]
+ 	\[\frac{dI}{dt} = \beta IS - \gamma I - \mu I\]
+ 	\[\frac{dR}{dt} = \gamma I - \mu R\]
+   	\end{theoreme}
+ 	
+On voit l'apparition de termes en $\mu$ dans toutes les populations car peu importe l'état de santé d'un individu, il peut mourir d'une autre cause au taux $\mu$, et on a $\mu$ nouveaux nés qui sont susceptibles.\\
+
+
+ On peut appliquer les mêmes méthodes de résolution numériques à ces équations et on trouve des résultats similaires. Cependant,  l'expression de $R_0$ va changer. Le nouveau R-effectif est alors défini comme $R_0 = \frac{\beta}{\gamma +\mu}$.  Il est logique que le $R_0$ ait diminué car le fait de considérer les morts naturelles diminue la probabilité d'infection moyen par chaque personne infectée. \\
+
+ \textbf{CONCLUSION : Considérons une maladie qui a un taux de transmission $\beta$ et un taux de guérison $\gamma$. Dans une population fermée et sans considérer le renouvellement naturel de la population, l'épidémie va se répandre seulement si $R_0 = \beta / \gamma > 1$. Si on considère une population au taux de renouvellement $\mu$, l'épidémie va se répandre seulement si $R_0 = \frac{\beta}{\gamma +\mu} > 1$.}
+
+ 
+\section{Modèles probabilistes}
+Tous les modèles considérés jusqu'à présent ont été déterministes, qui se basaient sur l’hypothèse d’une population de grande taille. Étant donné les mêmes conditions initiales, la même trajectoire est toujours observée. Mais en réalité, on ne peut pas voir exactement les même personnes infectées exactement au même moment.
+
+Donc maintenant, on s'intéresse aux cas aléatoires, qui sont appliqués lorsque la taille de la population est petite, soit au début de l'épidémie, soit après que les mesure de contrôle ont réussies etc... Dans ces cas là, il est particulièrement important que la stochasticité soit prise en compte et intégrée dans les modèles.
+
+\subsection{Modélisation avec des chaînes de Markov}
+\subsubsection {Modèle SIS}
+Dans cette partie, on va modéliser les compartiments S et I comme des chaînes de Markov.
+
+On note $S_n$ le nombre d’individus susceptibles, $I_n$ le nombre d’individus infectés au temps $t_n = n \Delta t$ où $\Delta t > 0$ est le pas.
+
+Comme nous l'avons supposé dans les cas déterministes, la population N reste constante et $N = S_n + I_n$, on pourra donc considérer seulement le nombre d’individus infectés $I_n$ comme une chaîne de Markov.
+
+On suppose que le pas $\Delta t$ est suffisamment petit, de cette manière il y aura un seul changement d'état dans chaque intervalle de temps: un seul individu passe de susceptible à infecté, ou inversement, ou rien ne se passe.
+
+Le graphe ci-dessous représente la chaîne de Markov construite :
+ \begin{figure}[H]
+    \includegraphics[width=\linewidth]{CM1.png}
+    \caption{Présentation graphique de la chaîne de Markov}
+ \end{figure}
+ 
+ On construit notre matrice de transition avec les probabilités suivantes :
+    \begin{theoreme}{Probabilités}
+			\begin{aligned}
+			P(I_{n+1}=i+1 \mid I_n=i) &= P_1 = \frac{\beta i(N-i)}{N} \Delta t \\
+			P(I_{n+1}=i-1 \mid I_n=i) &= P_2 = (b+\gamma)i \Delta t \\
+			P(I_{n+1}=i \mid I_n=i) &= 1-P_1-P_2 = 1-(\frac{\beta i(N-i)}{N} - (b+\gamma)i) \Delta t  \\
+			\end{aligned}
+    \end{theoreme}
+
+   	\begin{itemize}
+   		\item [-]$P_1$: chaque personne infectée est en contact avec une personne saine à vitesse $\beta$, alors cette personne saine devient contaminée, le nombre de infecté augmente, $I_{n+1} \rightarrow I_n + 1$.
+   		\item [-]$P_2$: une personne infectée meurt à taux b ou guérit à taux $\gamma$, le nombre de infecté diminue, $I_{n+1} \rightarrow I_n - 1$.
+   		\item [-]$1-P_1-P_2$: le nombre d'infecté ne change pas, $I_{n+1} \rightarrow I_n$.
+	\end{itemize}
+
+
+On peut vérifier que la chaîne de Markov est récurrente apériodique et positive, et que l'état $I_n = 0$ est absorbant alors que tous les autres sont transitoires. Par propriété des chaînes de Markov, on a alors que $\lim\limits_{n \rightarrow +\infty} I_n = 0$. Cependant, on va vouloir savoir au bout de combien de temps le nombre d'infectés va être égal à 0.\\
+
+Voici le graphe qu'on obtient en simulant cette chaîne de Markov sur Python, avec les paramètres suivants: 
+$\beta$=0.25, $\gamma$=0.1, b = 0.25 et $R_0$ < 1; $\beta$=0.3, $\gamma$=0.1, b = 0.2 et $R_0$ = 1; $\beta$=0.5, $\gamma$=0.1, b = 0.2 et $R_0$ > 1.
+
+ \begin{figure}[H]
+    \includegraphics[width=\linewidth]{SIS3.png}
+    \caption{Simulation de la chaîne de Markov avec plusieurs valeurs de $R_0$}
+ \end{figure}
+ 
+\textit{Le code correspondant est en annexe rubrique "Code PYTHON 4".}
+
+On constate que le temps de retour en 0 varie selon la valeur de $R_0$:
+
+   	\begin{itemize}
+   		\item [-] Avec $R_0<1$, l'épidémie s'éteint comme analysé précédemment, avec un temps de retour en 0 petit.
+   		\item [-] Avec $R_0=1$, l'épidémie s'éteint avec un temps de retour en 0 plus grand.
+   		\item [-] Avec $R_0>1$, l'épidémie ne semble pas s'éteindre, et le temps de retour en 0 est très grand.
+	\end{itemize}
+	
+On peut alors se poser la question du temps de retour en temps long, si $R_0>1$, quand-est-ce que l'épidémie va s'éteindre? Nous reviendrons sur ce point plus tard.
+
+\subsubsection{Modèle SIR}
+
+Comme on l'a fait pour le modèle SIS, on peut aussi reprendre le modèle SIR et le modéliser en utilisant un processus aléatoire. On partage la population en trois compartiments : S, I et R comme on l'a fait quand on a établi la version déterministe de ce modèle.  On se met dans le cas d'une épidémie au taux de transmission $\beta$, taux de guérison $\gamma$ se propageant au sein d'une population de $N$ individus au taux de natalité/mortalité $\mu$. Comme on sait que $R = N-S-I$, on peut se contenter de s'intéresser qu'au couple $(S,I)$.
+
+Comme on l'a fait pour le modèle SIS, on discrétise le temps de manière à ce que $t \in \lbrace 0, \Delta t, 2\Delta t,...\rbrace $, avec $\Delta t $ assez petit afin que durant une unité de temps, il n'y aie qu'un changement d'état. A chaque étape, on note le nombre d'individus dans chaque compartiment $S_n = S(n \Delta t)$ et $I_n = I(n \Delta t)$.
+
+Alors, $Z_n = (S_n, I_n)$ est une chaîne de Markov discrète dont on va pouvoir étudier les propriétés. 
+
+La première chose à trouver sont les probabilités de transition afin de pouvoir construire la matrice de transition de la chaîne.  Avec la manière dont on a discrétisé le temps, on a seulement 6 possibilités et la matrice de transition va être assez creuse. En couvrant tous les cas possibles, on arrive aux probabilités de transition suivantes :
+
+    \begin{theoreme}{Probabilités}
+		\begin{aligned}
+			P((S_n - 1,  I_n + 1) \mid (S_n,  I_N)) &= \frac{\beta S_n I_n}{N \Delta t}\\
+ 	        P((S_n,  I_n-1) \mid (S_n,  I_N)) &= \gamma I_n \Delta t \\
+	        P((S_n+1,  I_n-1) \mid (S_n,  I_N)) &= \mu I_n \Delta t \\
+	        P((S_n+1, I_n) \mid (S_n, I_N)) &= \mu (N - S_n - I_n) \Delta t \\
+	        P((S_n, I_n) \mid (S_n, I_N)) &= 1 - \frac{\beta S_n I_n}{N \Delta t} - \gamma I_n \Delta t - \mu I_n \Delta t - \mu (N - S_n - I_n) \Delta t \\
+	        \end{aligned}
+ \end{theoreme}
+
+On peut vérifier que la chaîne de Markov est récurrente apériodique et positive, et que l'état $(N,0)$ est absorbant alors que tous les autres sont transitoires. Par propriété des chaînes de Markov, on a alors que $\lim\limits_{n \rightarrow +\infty} (S_n, I_n) = (N,0)$. 
+
+Ce qui nous intéresse pour modéliser la propagation de l'épidémie est l'instant auquel est atteint cet état absorbant, défini comme $\tau_A = inf( n \geq 0, (S_n, I_n) = (N,0) = A)$. En simulant la chaîne de Markov pour différentes valeurs de $R_0$, on voit là aussi clairement que le temps d'atteinte de la probabilité invariante et le $R_0$ sont fortement corrélés.\\
+
+ \begin{figure}[H]
+    \includegraphics[width=\linewidth]{SIR_Markov.png}
+    \caption{Simulation de la chaîne de Markov avec plusieurs valeurs de $R_0$}
+ \end{figure}
+ 
+\textit{Le code correspondant est en annexe rubrique "Code PYTHON 5".} 
+
+On va donc étudier en particulier le comportement des chaînes de Markov de ce type, c'est à dire qui représente des populations vouées à disparaître presque sûrement.
+
+\subsubsection{Comportement des modèles avec chaîne de Markov en temps long}
+
+Si on résume ce qu'on a vu dans la modélisation que l'on a fait des épidémies grâce à des chaînes de Markov, on peut retenir que l'état où le nombre d'infectés est égal à 0 est absorbant. Ceci parait logique car si il n'y a plus de malades, il n'y a plus de transmission donc l'épidémie s'éteint. 
+
+On sait aussi que d'après la théorie des chaînes de Markov, si la chaîne considérée converge, ce serait vers cet état absorbant. Cependant, on a vu que dans certains cas dépendant du paramètre choisi, l'épidémie paraît se maintenir dans la population. Pour expliquer cela, on introduit la distribution quasi stationnaire : 
+
+\begin{theoreme}{Définition}
+ On considère une chaîne de markov Z sur $\mathbb{Z}$ qui représente une population isolée, c'est à dire que l'état 0 est un état absorbant, on le note A. On note $\tau_A = inf( n \geq 0, Z = A)$ le temps de retour en cet état d'extinction.\\
+ Soit $\alpha$ une mesure de probabilité sur $\mathbb{Z}$. On dit que $\alpha$ est une distribution quasi stationnaire (où Quasi-Stationary Distribution en anglais, d'où l'acronyme QSD) si pour tout $t \geq 0$, et tout espace mesurable $A \subset \mathbb{N}$:
+
+$$\alpha (A) = \mathbb{P}_{\alpha}( Z \in A | \tau_A > t )$$
+\end{theoreme}
+
+Cette QSD nous permet d'avoir une idée du temps d'extinction grâce au résultat suivant : 
+
+\begin{theoreme}{Résultat}
+Si on considère une chaîne de Markov Z qui possède les mêmes propriétés que dans la définition précédente, et qu'on considère qu'elle admet une QSD $\alpha$.
+Alors, il existe un nombre positif $\theta(\alpha)$ qui dépend de la QSD tel que : 
+$$ \mathbb{P}_{\alpha}(\tau_A > t) = e^{-\theta(\alpha)t}$$
+\end{theoreme}
+
+Ce résultat nous montre que en connaissant la QSD du processus de Markov qui modélise notre épidémie, on peut trouver le paramètre de la loi exponentielle que suit le temps d'extinction. 
+
+\subsection{Processus de branchement}
+
+\subsubsection{Introduction}
+
+Dans la partie précédente, on avait modélisé la population entière en la séparant en compartiments selon l'état de santé de l'individu en question. Les processus de branchements sont aussi basés sur les individus (les transitions de chaque individus sont données) et stochastiques mais modélisent directement le processus de I individus, sans analyser le mécanisme d'exposition/infection.
+
+Les processus de branchement ont été initié au dix-neuvième siècle par Bienaymé et ensuite par Galton-Watson pour étudier l'extinction des noms de famille. On peut reprendre ces idées pour étudier l'extinction d'une épidémie.  On s’intéresse à des individus qui se reproduisent (dans notre cas, reproduction correspond à infection). La population initiale est appelée génération 0. Leurs enfants correspondent à la génération 1 et on définit de même les générations suivantes. 
+
+On note $Z_n$ la taille de la n-ième génération, autrement dit le nombre d'infectés à l'instant n. Naturellement, ce nombre va dépendre de $X_{i,n}$ le nombre de cas secondaires générés à l'instant n par l'individu i. Les $\left\{ X_{i,n} \right\}_{(n,i) \in \mathbb{R}^2}$ sont supposés indépendants et identiquement distribués car les individus d’une même génération n’interfèrent pas entre eux et à l'instant n, on suppose que la loi qui gouverne les générations suivantes ne dépend pas du passé. Cette loi, que l'on appelle $\mu$, est suivie par tous les $\left\{ X_{i,n} \right\}_{(n,i) \in \mathbb{R}^2}$ et est donc identique pour chaque individu et à tout instant ce qui garantit la propriété de similarité des processus de Galton-Watson qui garantit que tout sous-arbre est identique à l'arbre principal.
+
+Sachant tout cela, on peut définir le processus de Galton-Watson de loi de reproduction $\mu$ de la manière suivante :
+
+\begin{theoreme}{Définition}
+\begin{center}
+$$Z_0 = 1$$
+$$Z_{n+1} = \sum_{i=1}^{Z_{n}} X_{n,i}$$
+\end{center}
+\end{theoreme}
+
+\begin{figure}[H]
+    \includegraphics[width=\linewidth]{arbre.jpg}
+    \caption{Représentation graphique d'un exemple simple de processus de Galton-Watson}
+ \end{figure}
+
+\subsubsection{Etude théorique de la probabilité d'extinction}
+
+La question au centre de la modélisation avec des processus de branchement de type Galton-Watson est alors la suivante : quelle est la probabilité que l’espèce s’éteigne ? Ou encore, dans notre contexte, quelle est la probabilité que l'épidémie disparaisse de la population ? \\
+
+Le comportement des modèles de type processus de Galton-Watson ont été étudiées longuement depuis leur apparition et on sait que deux cas se distinguent : les trajectoires du processus s'éteignent ou alors explosent exponentiellement : 
+
+\begin{center}
+$\mathbb{P} (\left\{ \lim\limits_{n \to \infty} Z_n = \infty \right\} \cup \left\{ \lim\limits_{n \to \infty} Z_n = 0 \right\} ) = 1$
+\end{center}
+
+Pour savoir quand l'épidémie modélisée va disparaître, on s'intéresse particulièrement à la probabilité d'extinction $\mathbb{P}_{ext} = \mathbb{P} (\lim\limits_{n \to \infty} Z_n = 0 )$. On va donc maintenant essayer de voir comment on peut trouver la valeur de cette probabilité et les paramètres qui peuvent influer dessus.
+
+\paragraph{- Fonction génératrice :} Le premier élément qu'il faut définir pour étudier la probabilité d'extinction est la fonction génératrice d'une variable aléatoire. On verra par la suite ce qu'elle représente dans le cadre d'un processus de branchement.\\
+
+\begin{theoreme}{Définition}
+Pour $0 \leq s \leq 1$, on définit la fonction génératrice d'une variable aléatoire X par 
+
+\begin{center}
+    $G(s) = \mathbb{E}\left[s^X\right]$
+\end{center}
+\end{theoreme}
+
+
+Grâce à des propriétés sur les séries, il est possible de montrer que : 
+
+\begin{itemize}
+    \item G est bien définie sur [0,1] et y est de classe $C^1$.
+    \item G est strictement croissante et convexe sur ]0,1[.\\
+\end{itemize}
+
+
+Par définition, cette fonction caractérise la loi de X, ce qui signifie que si Y et Z sont deux variables aléatoires et que $G_Z(s) = G_Y(s)$, $\forall z \in \mathbb{R}$, alors Y et Z ont la même loi. \\
+
+De plus, on peut remarquer que $ G(s) = \mathbb{E}\left[s^X\right] = \sum_{k=1}^{+\infty} s^k \mathbb{P}(X=k) $ donc $G(0) = \mathbb{P}(X = O)$.
+
+De même, on peut calculer $G'(s) = \sum_{k=1}^{+\infty} k s^{k-1} \mathbb{P}(X=k)$ donc $G'(0) = \mathbb{P}(X=1)$ et $G'(1) = \sum_{k=1}^{+\infty} k \mathbb{P}(X=k) = \mathbb{E}(X) $
+
+\paragraph{- Fonction génératrice de $Z_n$ :}
+
+Pour notre processus de branchement, on note $G_n = G_{Z_n}$ la fonction génératrice de $Z_n$, donc $G_n(s) = \mathbb{E}[s^{Z_n}] = \sum_{k=1}^{+\infty} s^k \mathbb{P}(Z_n=k)$ et G la fonction génératrice des $\left\{ X_{i,n} \right\}_{(n,i) \in \mathbb{R}^2}$, qui ont tous la même car ils ont tous la même loi. Alors, on a : 
+
+\begin{theoreme}{Résultat}
+\begin{center}
+$\forall n \in \mathbb{N}^*$, $ G_n = \underbrace{G \circ ... \circ G}_{n fois}(z)$.
+\end{center}
+\end{theoreme}
+
+La preuve de ce résultat se trouve en annexe en première position.
+
+\paragraph{- Convergence vers la probabilité d'extinction : }
+
+Maintenant que l'on sait cela, on remarque que $\mathbb{P}_{ext} = \mathbb{P} (\lim\limits_{n \to \infty} Z_n = 0) = \mathbb{P}( \exists n \in \mathbb{N}, Z_n = 0) = \lim\limits_{n \to \infty} \mathbb{P} (Z_n = 0) = \lim\limits_{n \to \infty} G_n(0)$. Cette limite est la limite d'une suite récurrente, vu qu'on a montré que $G_{n} = \underbrace{G \circ ... \circ G}_{n fois}(z)$, et donc on sait que $\mathbb{P}_{ext}$ est le plus petit point fixe de G sur ]0,1].
+
+On en arrive donc au résultat principal qui permet de conclure sur le sort de l'épidémie dans le temps : 
+
+\begin{theoreme}{Théorème}
+Soit un processus de branchement défini par $Z_n = \sum_{i=1}^{Z_{n-1}} X_{i,n}$ , avec $ \left\{ X_{i,n} \right\}_{(n,i) \in \mathbb{R}^2} \sim \mu \sim \mathcal{L}(m,\sigma^2)$. Alors deux cas se distinguent : 
+
+- Si $m > 1$, alors $\mathbb{P}_{ext} < 1$, on dit alors que le processus est \textbf{sur-critique}.
+
+- Si $m \leq 1$, alors $\mathbb{P}_{ext} = 1$, on dit alors que le processus est \textbf{sous-critique} si l'inégalité est stricte, ou \textbf{critique} si $m = 1$.
+\end{theoreme}
+
+La preuve de ce théorème est la deuxième annexe.
+
+\subsubsection{Simulations et estimations de la probabilité d'extinction}
+On voit donc que le paramètre principal qui décrit l'évolution de l'épidémie est $m = \mathbb{E}[\mu]$. Il correspond au nombre moyen de descendants (donc d'infections) par individu. Il joue un rôle analogue à celui de $R_0$.
+ 	
+Pour mettre en valeur l'influence de ce paramètre, on peut modéliser un processus de branchement (sur R) pour différentes valeurs de m. Le code correspondant se trouve en annexe. Pour la modélisation, nous avons choisi une distribution de poisson pour la distribution des noeuds secondaires $X_{i,n}$.
+On remarque bien cette corrélation sur la figure ci-dessous.
+
+\begin{figure}[H]
+\includegraphics[width=\linewidth]{B-P modélisation 1.png}
+\caption{Modélisation d'un processus de branchement où $X_i \sim \mathcal{P}(m)$ pour différentes valeurs de m}
+ \end{figure}
+ 
+\textit{Le code correspondant est en annexe rubrique "Code R 6".}
+
+Cependant, si on est dans le cas où le processus ne s'éteint rapidement, c'est à dire si $m > 1$, on n'a pas d'idée de la probabilité que le processus concerné s'éteigne. On peut cependant l'approcher sur python, en simulant 100 processus avec une valeur de m donnée, et en regardant combien survivent, autrement dit dans combien de cas l'épidémie représentée par le processus en question aurait persisté et dans combien de cas elle se serait éteinte.
+
+\begin{figure}[ht]
+\centering
+\subfigure[$\mu=1.5$]{
+ \begin{minipage}[c]{.32\linewidth} 
+\centering 
+ \includegraphics[width=\linewidth]{1.5.png}
+ \end{minipage}%
+ }%
+\hfill
+ \subfigure[$\mu=1$]{
+  \begin{minipage}[c]{.32\linewidth} 
+\centering  
+ \includegraphics[width=\linewidth]{1.png}
+ \end{minipage}%
+ }%
+\hfill
+  \subfigure[$\mu=0.5$]{
+  \begin{minipage}[c]{.32\linewidth} 
+\centering  
+ \includegraphics[width=\linewidth]{0.5.png}
+ \end{minipage}%
+ }%
+\centering 
+ \caption{Simulation de 100 trajectoires avec différentes valeurs de $\mu$}
+\end{figure}
+
+En même temps, on peut compter le nombre de processus qui ont survécu parmi les 100 processus. Avec $\mu = 1.5$, il y a environs 60 processus survécus parmi 100, avec $\mu = 1$, ce nombre devient très faible, à moins de 5, avec $\mu = 0.5$, aucun processus ont survécu.
+
+On peut voir que la probabilité d'extinction varie selon la valeur de m. Si m est plus petit que 1, alors l'épidémie va sûrement s'éteindre, si m égale à 1, alors l'épidémie va s'éteindre presque sûrement, si m est plus grand que 1, alors l'épidémie va continuer à se propager, plus m est grand, plus l'épidémie va exploser.
+
+
+\section{Conclusion}
+
+Dans ce rapport, nous avons fait un résumé de quelques modèles existant pour modéliser la propagation d'une épidémie. Tous les modèles étudiés, qu’ils soient déterministes ou stochastiques, font ressortir un paramètre crucial : R0. C'est lui qui détermine l'avenir de l'épidémie au sein de la population étudiée.
+Dans le cadre de l'application à la réalité, il est donc important de vouloir agir sur sa valeur pour la faire descendre sous la barre de 1, afin de stopper la propagation de l'épidémie. Ceci se fait grâce à des mesures préventives telles que la vaccination, la mise en place de gestes barrières ou de confinements.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+
+Keeling, M. and Rohani, P., 2011. Modeling Infectious Diseases in Humans and Animals. Princeton: Princeton University Press.\\
+
+Ross Beckley, Cametria Weatherspoon, Michael Alexander, Marissa Chandler, Anthony Johnson, and Ghan S Bhatt, 2013. Modeling epidemics with differential equations. Tennessee State University, Philander Smith College.\\
+
+Bongaarts, J. , 1989. A Model of the Spread of HIV Infection and the Demographic-Impact of AIDS. \\
+
+Hugo Falconet et Antoine Jego, Juin 2015, Modéliser la propagation d’une épidémie. \\
+
+Reza Yaesoubi and Ted Cohen, 2011. Generalized Markov Models of Infectious Disease Spread: A Novel Framework for Developing Dynamic Health Policies.\\
+
+Jacob C, 2010. Branching Processes: Their role in Epidemiology\\
+
+ Benaïm El-Karoui. Promenade aléatoire\\
+
+Sylvie Méléard, Denis Villemonais, 2011. Quasi-stationary distributions and population processes\\
+
+ Sophie Pénisson, 2010. Processus de branchement multitypes conditionnées à l’extinction tardive et illustration en analyse des risques épidémiologiques\\
+ 
+ Christine Jacob, 2010. Branching Processes: Their Role in Epidemiology\\
+ 
+ Hethcote, H.W. The Mathematics of Infectious Diseases \\
+
+Becker, N.G, 1976. Estimation for an epidemic model\\
+
+Becker, N.G. Estimation for discrete time branching processes with applications to epidemics.\\
+
+Peter Czuppon, François Blanquart, Florence Débarre, 2020. A stochastic epidemiological model to estimate the size of an outbreak at the first case identification\\
+
+
+
+\section{Annexes}
+\subsection{Preuve 1}
+\begin{preuve}{Preuve de la fonction génératrice}
+      On va montrer par récurrence que $ \forall n \in \mathbb{N}^*$, $ G_n = \underbrace{G \circ ... \circ G}_{n fois}(z)$.\\
+\setlength{\belowdisplayskip}{0.5pt}
+\framebox{Initialisation : }
+\setlength{\belowdisplayskip}{0.5pt}
+\begin{center}
+    $G_1(s) = \mathbb{E}(s^{Z_1}) = \mathbb{E}(s^{X_{1,0}}) = G(s)$
+\end{center}
+    
+\framebox{Hérédité : }
+On suppose $ \exists n \in \mathbb{N},G_n =  \underbrace{G \circ ... \circ G}_{n fois}(z)$. On cherche à montrer que $ G_{n+1} = \underbrace{G \circ ... \circ G}_{n+1 fois}(z)$. On a :
+  \setlength{\belowdisplayskip}{2pt}
+\begin{flalign*}
+    G_{n+1} &= \mathbb{E}\left[s^{Z_{n+1}}\right] \\[\parskip]
+    &= \mathbb{E}\left[s^{\sum_{i=1}^{Z_{n}} X_{i,n}}\right] \\[\parskip]
+    &= \mathbb{E}\left[\prod_{i=1}^{Z_n} s^{X_{i,n}}\right] \\[\parskip]
+    &= \mathbb{E}\left[\sum_{k=0}^{\infty} \left( \prod_{i=1}^{k} s^{X_{i,n}} \mathbf{1}_{Z_n = k} \right)  \right] \mbox{ (réécriture du produit)}  \\[\parskip]
+    &= \sum_{k=0}^{\infty} \mathbb{E}\left[ \prod_{i=1}^{k} s^{X_{i,n}} \mathbf{1}_{Z_n = k}   \right] \mbox{ (propriété de l'espérance)}  \\[\parskip]
+\end{flalign*}
+
+Or $Z_n \indep X_{i,n}$ car $Z_{n-1}$ ne dépend que de $Z_{n-1}$ et des $(X_{i, n-1})_{i \in \mathbb{N}}$) donc par récurrence immédiate on voit que $Z_n$ ne dépend que des $(X_{i, j})_{i \geq 0,  j < n}$ et vu que les $X_{i, j}$ sont indépendants, on obtient que $\forall i \in \mathbb{N}, Z_n \indep X_{i,n}$. On peut donc séparer le produit et l'indicatrice dans l'espérance : 
+\begin{flalign*}
+    G_{n+1} &= \sum_{k=0}^{\infty} \mathbb{E}\left[ \prod_{i=1}^{k} s^{X_{i,n}} \right] \mathbb{E}\left[ \mathbf{1}_{Z_n = k} \right] \\[\parskip]
+    &= \sum_{k=0}^{\infty} \prod_{i=1}^{k} \mathbb{E}\left[ s^{X_{i,n}} \right] \mathbb{P}(Z_n = k) \mbox{ (car les $X_{i,n}$ sont indépendants)} \\[\parskip]
+    &= \sum_{k=0}^{\infty} \mathbb{P} (Z_n = k) G(s)^k \\[\parskip]
+    &= G_n(G(s)) \\[\parskip]
+    &= \underbrace{G \circ ... \circ G}_{n+1 fois}(z) \mbox{ (par hypothèse de récurrence)}
+\end{flalign*}
+
+\framebox{Conclusion :} 
+
+On a donc bien montré la propriété de récurrence, on a $ \forall n \in \mathbb{N}, G_n = \underbrace{G \circ ... \circ G}_{n fois}(z)$
+\end{preuve} 
+
+\subsection{Preuve 2}
+\begin{preuve}{Preuve du théorème}
+      Puisque $G(1) = 1$, le graphe de G coupe la droite y=x (en rouge sur les figures) au moins au point (1,1). On va donc se placer dans chacun des cas et montrer que dans le cas sur-critique, il existe un autre point fixe plus petit qui sera la probabilité d'extinction, et dans les cas critique sous-critique, le seul point fixe de G sur ]0,1[ est (1,1).\\
+
+\framebox{Cas Sur-critique (m>1):}
+
+Pour trouver le point d'extinction de G, on étudie les points où $G(x) = x \Leftrightarrow \gamma(x) = G(x)-x = 0$
+
+$x \rightarrow \gamma'(x) = G'(x) - 1$ est une fonction croissante de $G'(0) - 1 <0$ à $m-1 > 0$, donc par le théorème des valeurs intermédiaire (car $G \in C^1$ donc sa dérivée est continue), on est sûrs qu'elle s'annule en un point $\alpha \in ]0,1[$. La fonction $\gamma$ est donc décroissante sur $[0,\alpha]$ puis croissante sur $[\alpha, 1]$. Comme G(0) > 0 et G(1)-1 = 0, il existe un point dans l'intervalle $]0,\alpha]$ où la fonction s'annule. $\mathbb{P}_{ext}$ est donc l'unique point fixe de G sur l'intervalle ]0,1[ donc $\mathbb{P}_{ext} < 1$.
+
+\begin{center}
+    \begin{tikzpicture}
+   \tkzTabInit[lgt = 2.5, espcl = 4, deltacl = 1]{$x$ / 1 , $G'(x)-1$ / 1, $G(x)-x$ / 2}{$0$, $\alpha$, $1$}
+   \tkzTabLine{G'(0)-1, -, z, +, m-1}
+   \tkzTabVar{+/ G(0), -/ , +/ 0}
+   \tkzTabVal{1}{2}{0.5}{$\mathbb{P}_{ext}$}{0}
+\end{tikzpicture}
+\end{center}
+
+\framebox{Cas $m \leq 1$ :}
+
+On fait la même étude, sauf que maintenant on remarque que $\gamma'(x) = G'(x) - 1$ est croissante de $G'(0) - 1 <0$ à $m-1 < 0$, donc strictement négative. 
+Alors, $\gamma$ est une fonction strictement décroissante de G(0) > 0 à 0. G admet donc un seul point fixe, 1 et donc $\mathbb{P}_{ext} = 1$.
+
+\begin{center}
+    \begin{tikzpicture}
+   \tkzTabInit[lgt = 2.5, espcl = 4, deltacl = 1]{$x$ / 1 , $G'(x)-1$ / 1, $G(x)-x$ / 2}{$0$, $1 = \mathbb{P}_{ext}$}
+   \tkzTabLine{G'(0)-1, -, m-1}
+   \tkzTabVar{+/ G(0), -/0}
+\end{tikzpicture}
+\end{center}
+
+\end{preuve} 
+
+\begin{preuve}{Preuve (suite) }
+\framebox{Graphiquement :}
+
+On conclut donc que si m = G'(1) > 1, autrement dit si la pente de la courbe représentative de G au point 1 est supérieure à 1, alors la convexité de la fonction garantit que $\mathbb{P}_{ext}$ soit inférieure à 1. Dans le cas inverse, la convexité de G garantit que la fonction ne coupe pas la droite y=x en un autre point et garantit donc que $\mathbb{P}_{ext} = 1$. On peut le vérifier en traçant les courbes : 
+
+\begin{figure} [H]
+ \begin{minipage}[c]{.46\linewidth} 
+ \includegraphics[width=\linewidth]{pente mg1.png}
+\caption{G dans le cas où m > 1}
+ \end{minipage} 
+ \hfill 
+ \begin{minipage}[c]{.46\linewidth} 
+ \includegraphics[width=\linewidth]{pente lq1.png}
+  \caption{G dans le cas où m < 1 }
+ \end{minipage} 
+  \end{figure}
+  
+\end{preuve}
+
+\subsection{Code PYTHON 1}
+\begin{preuve}{Code pour la simulation du modèle SIR sans démographie}
+
+\framebox{Cas R0>1:}
+\begin{minted}{python}
+import matplotlib.pyplot as plt
+import numpy as np
+##################### Paramètres #####################
+beta=1.4247 #beta = transmission rate
+gamma=0.14286 #gamma = recovery rate
+S0=1-1e-6 # CI
+I0=1e-6
+X0 = (S0, I0, 0.0)
+dt = 1
+
+#################### Equation différentielle ####################
+
+def SIR1(x): 
+    F = np.zeros(3)
+    F[0] = -beta*x[0]*x[1] #S
+    F[1] = beta*x[0]*x[1] - gamma*x[1] #I
+    F[2] = gamma*x[1] #R
+    return F
+
+#################### Méthode de résolution RK4 ###################
+
+def RK4 (X, dt):
+    k1 = SIR1(X)
+    k2 = SIR1(X+(dt/2)*k1)
+    k3 = SIR1(X+(dt/2)*k2)
+    k4 = SIR1(X+dt*k3)
+    return X+ dt* (k1 + 2*k2 + 2*k3 + k4)/6
+
+####### Fonction de résolution itération de la méthode ########
+
+def sol (T, X, dt, method):
+    res = np.copy(X0)
+    tab = []
+    tab.append(X0) 
+    Inter = X
+    
+    for j in range(int(T/dt)):
+        res = method(Inter, dt)
+        Inter = res
+
+\end{minted}
+\end{preuve}
+
+\begin{preuve}{Code pour la simulation du modèle SIR sans démographie (suite)}
+\begin{minted}{python}
+
+        tab.append(res)
+        
+    return  np.array(tab).T
+    
+######################### Tracé ###########################
+
+SIRwod1 = sol(70, X0, dt, RK4)
+plt.plot(SIRwod1[0], label = "susceptible")
+plt.plot(SIRwod1[1], label = "infected")
+plt.plot(SIRwod1[2], label = "removed")
+plt.legend()
+plt.xlabel('Time')
+plt.ylabel('S, I and R')
+plt.savefig('SIR_wod1.png')
+plt.show()
+\end{minted}
+
+\framebox{Cas R0>1:}
+\begin{minted}{python}
+beta=0.78 #beta = transmission rate
+gamma=1 #gamma = recovery rate
+S0=1-1e-6 # CI
+I0=1e-6
+X0 = (S0, I0, 0.0)
+dt = 1
+
+################# Equation différentielle ###############
+
+def SIR1(x): 
+    F = np.zeros(3)
+    F[0] = -beta*x[0]*x[1] #S
+    F[1] = beta*x[0]*x[1] - gamma*x[1] #I
+    F[2] = gamma*x[1] #R
+    return F
+
+################## Méthode de résolution RK4 ################
+
+def RK4 (X, dt):
+    k1 = SIR1(X)
+    k2 = SIR1(X+(dt/2)*k1)
+    k3 = SIR1(X+(dt/2)*k2)
+    k4 = SIR1(X+dt*k3)
+    return X+ dt* (k1 + 2*k2 + 2*k3 + k4)/6
+
+\end{minted}
+\end{preuve}
+
+\begin{preuve}{Code pour la simulation du modèle SIR sans démographie (suite)}
+\begin{minted}{python}
+
+####### Fonction de résolution itération de la méthode #########
+
+def sol (T, X, dt, method):
+    res = np.copy(X0)
+    tab = []
+    tab.append(X0) 
+    Inter = X
+    
+    for j in range(int(T/dt)):
+        res = method(Inter, dt)
+        Inter = res
+        tab.append(res)
+        
+    return  np.array(tab).T
+
+################################### Tracé ###################
+
+SIRwod2 = sol(70, X0, dt, RK4)
+plt.plot(SIRwod2[0], label = "susceptible")
+plt.plot(SIRwod2[1], label = "infected")
+plt.plot(SIRwod2[2], label = "removed")
+plt.legend()
+plt.xlabel('Time')
+plt.ylabel('S, I and R')
+plt.savefig('SIR_wod2.png')
+plt.show()
+
+\end{minted}
+\end{preuve}
+
+\subsection{Code PYTHON 2}
+\begin{preuve}{Code pour la simulation du modèle SIR avec démographie }
+\begin{minted}{python}
+############################ Paramètres ########################
+
+mu = 0.25/1000 # mu = taux de mortalité naturelle indépendant de l'épidémie
+beta=1.4247 #beta = transmission rate
+gamma=0.14286 #gamma = recovery rate
+S0=1-1e-6 # CI
+I0=1e-6
+R0=1-S0-I0
+X0 = (S0, I0, R0)
+
+#################### Equation différentielle ####################
+
+def SIR2(x):
+    F = np.zeros(3)
+    F[0] = mu - beta*x[0]*x[1] -mu*x[0]
+    F[1] = beta*x[0]*x[1] - gamma*x[1] -mu*x[1]
+    F[2] = gamma*x[1] - mu*x[2]
+    return F
+
+################### Méthode de résolution RK4 ###################
+
+def RK42 (X, dt):
+    k1 = SIR2(X)
+    k2 = SIR2(X+(dt/2)*k1)
+    k3 = SIR2(X+(dt/2)*k2)
+    k4 = SIR2(X+dt*k3)
+    return X+ dt* (k1 + 2*k2 + 2*k3 + k4)/6
+
+######################## Tracé ###########################
+
+SIRwd = sol(70, X0, dt, RK42)
+plt.plot(SIRwd[0], label = "susceptible")
+plt.plot(SIRwd[1], label = "infected")
+plt.plot(SIRwd[2], label = "removed")
+plt.legend()
+plt.savefig('SIR_wd.png')
+plt.show()
+\end{minted}
+\end{preuve}
+
+\subsection{Code PYTHON 3}
+\begin{preuve}{Code pour la simulation du modèle SIS}
+\begin{minted}{python}
+########################## Paramètres ##########################
+
+beta=1.4247
+gamma=0.14286
+io = 1e-6
+X0 = [1-io, io]
+
+####################### Equation différentielle ###################
+
+def SIS(x):
+    F = np.zeros(2)
+    F[0] = gamma*x[1] - beta*x[1]*x[0]
+    F[1] = beta*x[0]*x[1] - gamma*x[1]
+    return F
+
+####################### Méthode de résolution RK4 ###################
+
+def RK42 (X, dt):
+    k1 = SIS(X)
+    k2 = SIS(X+(dt/2)*k1)
+    k3 = SIS(X+(dt/2)*k2)
+    k4 = SIS(X+dt*k3)
+    return X+ dt* (k1 + 2*k2 + 2*k3 + k4)/6
+
+############################# Tracé #############################
+
+rk42 = sol(70, X0, dt, RK42)
+plt.plot(rk42[0], label = "susceptible")
+plt.plot(rk42[1], label = "infected")
+plt.xlabel('Time')
+plt.ylabel('S and I')
+plt.legend()
+plt.savefig('SIS.png')
+plt.show()
+plt.show()}
+\end{minted}
+\end{preuve}
+
+\subsection{Code PYTHON 4}
+\begin{preuve}{Code pour la simulation du modèle SIS avec des chaînes de markov}
+\begin{minted}{python}
+###################### paramètres pour R0 < 1 ###############
+N=250
+beta=0.25
+gamma=0.1  
+b = 0.25    
+N = 250
+deltat =0.0015
+
+################ Création de la matrice de transition #############
+
+P1 = np.zeros([N,N])
+P1[0,0] = 1
+for i in range (1,N-1):
+    P1[i,i+1]= beta*i*(N-i)*deltat/N
+    P1[i, i-1] = (beta+gamma)*i*deltat
+    P1[i,i] = 1- ((beta*i*(N-i)*deltat/N)+(beta+gamma)*i*deltat)
+
+################# Itérations de la chaine de markov ###############
+
+
+def markov(n,P,x0):
+
+    X=np.zeros(n,dtype=np.int) 
+    #on indique que X contiendra seulement des entiers
+    X[0]=x0
+    for k in range(n-1):
+        X[k+1]=np.random.choice(a=range(len(P)), p=P[X[k],:])
+                # Choix au hasard avec les états numérotés de 1 
+                # à len(P) et proba la case dans P
+    return X
+
+x0 = 100
+
+markov1 = markov(50000, P1, x0)
+
+###################### paramètres pour R0 = 1 ##################
+
+beta = 0.3
+gamma = 0.1
+b = 0.2         
+
+\end{minted}
+\end{preuve}
+
+\begin{preuve}{Code pour la simulation du modèle SIS avec des chaînes de markov (suite)}
+\begin{minted}{python}
+
+P2 = np.zeros([N,N])
+P2[0,0] = 1
+for i in range (1,N-1):
+    P2[i,i+1]= beta*i*(N-i)*deltat/N
+    P2[i, i-1] = (b+gamma)*i*deltat
+    P2[i,i] = 1- ((beta*i*(N-i)*deltat/N)+(b+gamma)*i*deltat)
+
+markov2 = markov(50000, P2, x0)
+
+###################### paramètres pour R0 > 1 ###############
+
+beta = 0.5
+gamma = 0.1
+b = 0.2         
+
+P3 = np.zeros([N,N])
+P3[0,0] = 1
+for i in range (1,N-1):
+    P3[i,i+1]= beta*i*(N-i)*deltat/N
+    P3[i, i-1] = (b+gamma)*i*deltat
+    P3[i,i] = 1- ((beta*i*(N-i)*deltat/N)+(b+gamma)*i*deltat)
+
+markov3 = markov(50000, P3, x0)
+
+plt.plot(markov1, c= 'r', label = "R0 < 1")
+plt.plot(markov2, c = 'g', label = "R0 = 1")
+plt.plot(markov3, c = 'b', label = "R0 > 1")
+plt.legend()
+plt.show()
+\end{minted}
+\end{preuve}
+\subsection{Code PYTHON 5}
+\begin{preuve}{Code pour la simulation du modèle SIR avec des chaînes de markov}
+\begin{minted}{python}
+
+################## paramètres pour R0 = 1.42 #################
+
+N=50
+beta=1
+b=0.2
+gamma=0.5 
+deltat =0.01
+
+
+(S0, I0) = (N-5, 5)
+
+######################## chaine de markov #####################
+
+nbpas = 5000
+S = np.zeros(nbpas)
+I = np.zeros(nbpas)
+S[0] = S0
+I[0] = I0
+
+for j in range(10):
+    for i in range(nbpas-1):
+        probas = np.zeros(5)
+        probas[0] = beta*S[i]*I[i]/N*deltat
+        probas[1] = gamma*I[i]*deltat
+        probas[2] = b*I[i]*deltat
+        probas[3] = b*(N-S[i]-S[i])*deltat
+        probas[4] = 1-probas[0]-probas[1]-probas[2]-probas[3]
+
+        x = np.random.uniform(0, 1)
+
+        if x<= probas[0]:
+            S[i+1] = S[i]-1
+            I[i+1] = I[i]+1
+
+        elif x<= probas[0]+probas[1]:
+            S[i+1] = S[i]
+            I[i+1] = I[i]-1
+\end{minted}
+\end{preuve}
+
+\begin{preuve}{Code pour la simulation du modèle SIR avec des chaînes de markov (suite)}
+\begin{minted}{python}
+
+        elif x<= probas[0]+probas[1]+probas[2]:
+            S[i+1] = S[i]+1
+            I[i+1] = I[i]-1
+
+        elif x<= probas[0]+probas[1]+probas[2]+probas[3]:
+            S[i+1] = S[i]+1
+            I[i+1] = I[i]
+
+        else: 
+
+            S[i+1] = S[i]
+            I[i+1] = I[i]
+    plt.plot(I)
+
+plt.show()
+
+################### paramètres pour R0 = 2.03 ##################
+
+
+beta=1.4247
+b=0.5
+gamma=0.2
+deltat =0.01
+
+
+(S0, I0) = (N-5, 5)
+
+######################## chaine de markov #####################
+
+nbpas = 5000
+S2 = np.zeros(nbpas)
+I2 = np.zeros(nbpas)
+S2[0] = S0
+I2[0] = I0
+
+\end{minted}
+\end{preuve}
+
+\begin{preuve}{Code pour la simulation du modèle SIR avec des chaînes de markov (suite)}
+\begin{minted}{python}
+
+for j in range(10):
+    for i in range(nbpas-1):
+
+        probas = np.zeros(5)
+        probas[0] = beta*S2[i]*I2[i]/N*deltat
+        probas[1] = gamma*I2[i]*deltat
+        probas[2] = b*I2[i]*deltat
+        probas[3] = b*(N-S2[i]-S2[i])*deltat
+        probas[4] = 1-probas[0]-probas[1]-probas[2]-probas[3]
+
+        x = np.random.uniform(0, 1)
+
+        if x<= probas[0]:
+            S2[i+1] = S2[i]-1
+            I2[i+1] = I2[i]+1
+
+        elif x<= probas[0]+probas[1]:
+            S2[i+1] = S2[i]
+            I2[i+1] = I2[i]-1
+
+        elif x<= probas[0]+probas[1]+probas[2]:
+            S2[i+1] = S2[i]+1
+            I2[i+1] = I2[i]-1
+
+        elif x<= probas[0]+probas[1]+probas[2]+probas[3]:
+            S2[i+1] = S2[i]+1
+            I2[i+1] = I2[i]
+
+        else: 
+
+            S2[i+1] = S2[i]
+            I2[i+1] = I2[i]
+            
+        plt.plot(I2)
+plt.show()
+
+\end{minted}
+\end{preuve}
+
+\begin{preuve}{Code pour la simulation du modèle SIR avec des chaînes de markov (suite)}
+\begin{minted}{python}        
+############################ paramètres #########################
+
+beta=1
+b=0.3
+gamma=0.1     ## R0 = 2.5
+deltat =0.01
+
+
+(S0, I0) = (N-5, 5)
+
+######################## chaine de markov #####################
+
+nbpas = 5000
+S3 = np.zeros(nbpas)
+I3 = np.zeros(nbpas)
+S3[0] = S0
+I3[0] = I0
+
+for j in range(10):
+    for i in range(nbpas-1):
+
+        probas = np.zeros(5)
+        probas[0] = beta*S3[i]*I3[i]/N*deltat
+        probas[1] = gamma*I3[i]*deltat
+        probas[2] = b*I3[i]*deltat
+        probas[3] = b*(N-S3[i]-S3[i])*deltat
+        probas[4] = 1-probas[0]-probas[1]-probas[2]-probas[3]
+
+        x = np.random.uniform(0, 1)
+
+        if x<= probas[0]:
+            S3[i+1] = S3[i]-1
+            I3[i+1] = I3[i]+1
+
+        elif x<= probas[0]+probas[1]:
+            S3[i+1] = S3[i]
+            I3[i+1] = I3[i]-1
+\end{minted}
+\end{preuve}
+
+\begin{preuve}{Code pour la simulation du modèle SIR avec des chaînes de markov (suite)}
+\begin{minted}{python}
+
+        elif x<= probas[0]+probas[1]+probas[2]:
+            S3[i+1] = S3[i]+1
+            I3[i+1] = I3[i]-1
+
+        elif x<= probas[0]+probas[1]+probas[2]+probas[3]:
+            S3[i+1] = S3[i]+1
+            I3[i+1] = I3[i]
+
+        else: 
+
+            S3[i+1] = S3[i]
+            I3[i+1] = I3[i]
+        plt.plot(I3)
+plt.show()
+        
+plt.plot(I, label = "R0 = 1.42")
+plt.plot(I2, label = "R0 = 2")
+plt.plot(I3, label = "R0 = 2.5")
+plt.ylabel("Nombre d'infectés")
+plt.xlabel("Nombre de pas (unités de temps)")
+plt.legend()
+plt.savefig('SIR_Markov.png')
+plt.show()
+
+\end{minted}
+\end{preuve}
+
+\subsection{Code R 6}
+\begin{preuve}{Code pour la simulation d'un processus de branchement}
+\begin{minted}{r}
+#initialize list of population size at generation n
+Z1<-rep(0,20)
+Z2<-rep(0,20)
+Z3<-rep(0,20)
+
+#pop. size 1 at generation 0
+Z1[1] = 1
+Z2[1] = 1
+Z3[1] = 1
+
+#poisson r.v.
+#each member generates poisson(lambda) offspring
+#sum offspring
+
+lambda = 0.5 #<1 
+N = 20 
+for (i in 2:N)
+{
+  if(Z1[i-1]==0) {Z1[i]=0} else 
+  {
+    x=rpois(Z1[i-1], lambda) 
+    Z1[i] = sum(x)
+  }
+}
+Z1
+
+###################################################
+lambda = 1 #=1
+N = 20
+for (i in 2:N)
+{
+  if(Z2[i-1]==0) {Z2[i]=0} else 
+  {
+    x=rpois(Z1[i-1], lambda) 
+    Z2[i] = sum(x)
+  }
+}
+Z2
+
+\end{minted}
+\end{preuve}
+
+
+\begin{preuve}{Code pour la simulation d'un processus de branchement (suite)}
+\begin{minted}{r}
+##################################################
+lambda = 1.5 #>1
+N = 20
+for (i in 2:N)
+{
+  if(Z3[i-1]==0) {Z3[i]=0} else 
+  {
+    x=rpois(Z3[i-1], lambda) 
+    Z3[i] = sum(x)
+  }
+}
+Z3
+
+###############################################
+plot(Z1, type = "l", col = 'black', xlim = c(1,20), ylim = c(1,100))
+lines(Z2, type = "l", col = 'red')
+lines(Z3, type = "l", col = 'blue')
+
+legend(14,100,legend=c("m = 0.5","m = 1","m = 1.5"), col=c("black",
+       "red","blue"),lty=c(1,1,1), ncol=1)
+\end{minted}
+\end{preuve}
+
+\end{document}
